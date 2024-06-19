@@ -1,3 +1,3 @@
-SUBDIRS = libbasic
+SUBDIRS = libbasic libcore
 
 

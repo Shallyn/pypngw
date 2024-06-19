@@ -7,6 +7,7 @@ AC_CONFIG_MACRO_DIRS([m4])
 AC_CONFIG_SRCDIR([libbasic/main.c])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_FILES([libbasic/Makefile
+		 libcore/Makefile
 		 Makefile])
 
 AM_INIT_AUTOMAKE
