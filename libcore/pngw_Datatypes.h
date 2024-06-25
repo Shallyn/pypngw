@@ -22,6 +22,12 @@ typedef struct {
     REAL8 e07;
     REAL8 e08;
     REAL8 e09;
+    REAL8 e010;
+    REAL8 e011;
+    REAL8 e012;
+    REAL8 e013;
+    REAL8 e014;
+    REAL8 e015;
     REAL8 vom;
     REAL8 vom2;
     REAL8 vom3;
@@ -41,11 +47,25 @@ typedef struct {
     REAL8 sx2;
     REAL8 sigx;
     REAL8 sigx2;
+
+    REAL8 hPlusU;
+    REAL8 hPlusE;
+    COMPLEX16 hPlusL;
+    COMPLEX16 hPlusLE;
+
+    // REAL8 hCrossU;
+    // REAL8 hCrossE;
+    COMPLEX16 hCrossL;
+    COMPLEX16 hCrossLE;
+
     // angle terms
     REAL8 cos0Thp4Phi;
     REAL8 cos0Thp2Phi;
     REAL8 cosp2Th0Phi;
     REAL8 cosp4Th0Phi;
+    REAL8 cos0Thp1Phi;
+    REAL8 cosp1Th0Phi;
+    REAL8 cos0Thp3Phi;
 
     REAL8 sin0Thp3Phi;
     REAL8 sin0Thp1Phi;
@@ -53,6 +73,31 @@ typedef struct {
     REAL8 sinp1Th0PhiTO3;
     REAL8 sinp1Th0PhiTO2;
     REAL8 sinp1Th0PhiTO4;
+    REAL8 sinp2Th0Phi;
+    REAL8 sin0Thp2Phi;
+    REAL8 sin0Thp4Phi;
+
+    COMPLEX16 exp0Thp4Phi;
+    COMPLEX16 expp8Thp4Phi;
+    COMPLEX16 expp8Th0Phi;
+    COMPLEX16 expm4Thm4Phi;
+    COMPLEX16 expp2Th0Phi;
+    COMPLEX16 expp4Th0Phi;
+    COMPLEX16 expp6Thp4Phi;
+    COMPLEX16 exp0Thp2Phi;
+    COMPLEX16 exp0Thm3Phi;
+    COMPLEX16 exp0Thm2Phi;
+    COMPLEX16 expp2Thp4Phi;
+    COMPLEX16 exp0Thp3Phi;
+    COMPLEX16 expp6Th0Phi;
+    COMPLEX16 expp4Thp4Phi;
+    COMPLEX16 exp0Thp1Phi;
+    COMPLEX16 exp0Thm1Phi;
 }BBHDynParams;
+
+typedef struct {
+    BBHDynParams *pms;
+    BBHDynVariables *var;
+}BBHCore;
 
 #endif
