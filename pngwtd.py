@@ -11,6 +11,7 @@ import sys, os
 from optparse import OptionParser
 from pathlib import Path
 from scipy.integrate import solve_ivp, RK45
+from .FD2TD import calculate_fStart
 
 MSUN_TSCALE = 4.927200467232548e-6
 MSUN_RSCALE = 1.47662504e3
@@ -29,7 +30,7 @@ DEFAULT_dL = 100.0
 DEFAULT_phic = 0.0
 DEFAULT_kappa1 = 1.0
 DEFAULT_kappa2 = 1.0
-DEFAULT_vommax = 1./np.sqrt(6)
+DEFAULT_vommax = 1./np.sqrt(6) # 0.277
 class pypngwtd(object):
     def __init__(self, **kwargs):
         self.__m1 = kwargs.get('m1', DEFAULT_m1)
@@ -47,17 +48,35 @@ class pypngwtd(object):
         self.__vommax = kwargs.get('vommax', DEFAULT_vommax)
     @property
     def hPref(self):
-        return 2.*(self.__m1 + self.__m2)*MSUN_RSCALE / (self.__dL*MPARSEC)
+        return 2.*(self.__m1 + self.__m2)*MSUN_RSCALE*self.eta / (self.__dL*MPARSEC)
     def __str__(self):
         return f'<bbh: (m1,m2,chi1,chi2) = ({self.__m1}, {self.__m2}, {self.__chi1},{self.__chi2})>'
     def __repr__(self):
         return self.__str__()
+    @property
+    def MT(self):
+        return (self.m1+self.m2)*MSUN_TSCALE
+    @property
+    def fmin(self):
+        return self.vom0**3 / (np.pi * self.MT)
+    @property
+    def fmax(self):
+        return self.vommax**3 / (np.pi * self.MT)
     @property
     def vn0(self):
         return np.power(np.pi*(self.m1+self.m2)*MSUN_TSCALE*self.__fmin, 1./3.)
     @property
     def vom0(self):
         return self.calculate_vom_from_etvn(self.__e0, self.vn0)
+    # @property
+    # def vom0(self):
+    #     return np.power(np.pi*self.MT*self.__fmin, 1./3.)
+    @property
+    def vommax(self):
+        return self.__vommax
+    @property
+    def e0(self):
+        return self.__e0
     @property
     def m1(self):
         return self.__m1
@@ -265,6 +284,95 @@ class pypngwtd(object):
             6*sx*((-kappa1 + kappa2 + dm*(2 + kappa1 + kappa2))*sigx + (2 + kappa1 + kappa2)*sx)) / (4. * tmpe * tmpe);
         return PN2 + PN3 + PN4
 
+    def dldvom(self, et, vom):
+        vom2 = vom*vom
+        vom4 = vom2*vom2
+        vom6 = vom4*vom2
+        dm = self.dm
+        sigx = self.sigma
+        sigx2 = sigx*sigx
+        sx = self.s
+        sx2 = sx*sx
+        eta = self.eta
+        eta2 = eta*eta
+        et2 = et*et
+        et4 = et2*et2
+        et6 = et4*et2
+        et8 = et6*et2
+        et10 = et8*et2
+        et12 = et10*et2
+        et14 = et12*et2
+        kappa1 = self.kappa1
+        kappa2 = self.kappa2
+        sqmet2p2 = 1. - et2
+        sqmet2p = np.sqrt(sqmet2p2)
+        sqmet2p5 = np.power(1. - et2, 5./2.)
+        sqmet2p7 = sqmet2p5 * sqmet2p2
+
+        pref = 5./(32.*eta*vom6)
+        PN0 = (96*sqmet2p7)/(96 + 292*et2 + 37*et4)
+        PN2 = (12*(16*(-2281 + 924*eta) + et6*(-11717 + 8288*eta) + 14*et4*(-15485 + 10122*eta) + 8*et2*(-37873 + 19950*eta))*sqmet2p5)/(7*(96 + 292*et2 + 37*et4)**2)
+        PN3 = ((-1 + et2)**7*(179789679820800 + 1010380544409600*et2 + 47093347123200*et4 + 3705385446604800*et6 - 6228810398361600*et8 + 23280334705627776*et10 - 62023162920413520*et12 + 186636591503717147*et14)*np.pi + 78033715200*(-1 + et2)**2*(dm*(3408 + 23080*et2 + 13996*et4 + 621*et6)*sigx + 6*(1664 + 10096*et2 + 5333*et4 + 201*et6)*sx))/(4877107200*(96 + 292*et2 + 37*et4)**2)
+        PN4 = -1/882*((-1 + et2)*(3*et12*(456876000 + 627268623*sqmet2p + 279056960*eta2*sqmet2p - 18648*eta*(9800 + 63551*sqmet2p)) - 252*et10*(-86266684*eta2*sqmet2p + eta*(76345920 + 362250425*sqmet2p - 1100232*(2 + kappa1 + kappa2)*sigx2*sqmet2p) - 14*(333*(-9 + 118*(-1 + dm)*kappa1 - 118*(1 + dm)*kappa2)*sigx2*sqmet2p + 7*(1947600 + 2165831*sqmet2p)) + 1100232*(2*dm + (-1 + dm)*kappa1 + kappa2 + dm*kappa2)*sigx*sqmet2p*sx + 1100232*(2 + kappa1 + kappa2)*sqmet2p*sx2) - 768*(10160640 + 555007*sqmet2p - 4353552*eta2*sqmet2p + 63504*sigx2*sqmet2p + 3810240*kappa1*sigx2*sqmet2p - 3810240*dm*kappa1*sigx2*sqmet2p + 3810240*kappa2*sigx2*sqmet2p + 3810240*dm*kappa2*sigx2*sqmet2p - 1008*eta*(4032 - 703*sqmet2p + 7560*(2 + kappa1 + kappa2)*sigx2*sqmet2p) + 7620480*(2*dm + (-1 + dm)*kappa1 + kappa2 + dm*kappa2)*sigx*sqmet2p*sx + 7620480*(2 + kappa1 + kappa2)*sqmet2p*sx2) - 256*et2*(516287520 - 73426552*sqmet2p - 144448668*eta2*sqmet2p - 7938*(-301 + 13656*(-1 + dm)*kappa1 - 13656*(1 + dm)*kappa2)*sigx2*sqmet2p - 441*eta*(468288 - 481793*sqmet2p + 491616*(2 + kappa1 + kappa2)*sigx2*sqmet2p) + 216802656*(2*dm + (-1 + dm)*kappa1 + kappa2 + dm*kappa2)*sigx*sqmet2p*sx + 216802656*(2 + kappa1 + kappa2)*sqmet2p*sx2) - 192*et4*(1650398400 - 4245699007*sqmet2p - 1687303730*eta2*sqmet2p + 9628794*sigx2*sqmet2p + 356241564*kappa1*sigx2*sqmet2p - 356241564*dm*kappa1*sigx2*sqmet2p + 356241564*kappa2*sigx2*sqmet2p + 356241564*dm*kappa2*sigx2*sqmet2p - 147*eta*(4490880 - 36951661*sqmet2p + 4846824*(2 + kappa1 + kappa2)*sigx2*sqmet2p) + 712483128*(2*dm + (-1 + dm)*kappa1 + kappa2 + dm*kappa2)*sigx*sqmet2p*sx + 712483128*(2 + kappa1 + kappa2)*sqmet2p*sx2) - 12*et8*(-25326894600 - 54752532769*sqmet2p - 21572009606*eta2*sqmet2p + 20464164*sigx2*sqmet2p + 410265828*kappa1*sigx2*sqmet2p - 410265828*dm*kappa1*sigx2*sqmet2p + 410265828*kappa2*sigx2*sqmet2p + 410265828*dm*kappa2*sigx2*sqmet2p - 84*eta*(-120604260 - 947872157*sqmet2p + 9768234*(2 + kappa1 + kappa2)*sigx2*sqmet2p) + 820531656*(2*dm + (-1 + dm)*kappa1 + kappa2 + dm*kappa2)*sigx*sqmet2p*sx + 820531656*(2 + kappa1 + kappa2)*sqmet2p*sx2) - 64*et6*(-1616534010 - 19063578740*sqmet2p - 6653542959*eta2*sqmet2p + 23210712*sigx2*sqmet2p + 591312204*kappa1*sigx2*sqmet2p - 591312204*dm*kappa1*sigx2*sqmet2p + 591312204*kappa2*sigx2*sqmet2p + 591312204*dm*kappa2*sigx2*sqmet2p - 126*eta*(-5131854 - 194324719*sqmet2p + 9385908*(2 + kappa1 + kappa2)*sigx2*sqmet2p) + 1182624408*(2*dm + (-1 + dm)*kappa1 + kappa2 + dm*kappa2)*sigx*sqmet2p*sx + 1182624408*(2 + kappa1 + kappa2)*sqmet2p*sx2)))/(96 + 292*et2 + 37*et4)**3
+        return pref*(PN0 + vom2*PN2 + vom2*vom*PN3 + vom4*PN4)
+
+    def dtdvom(self, et, vom):
+        vom2 = vom*vom
+        vom3 = vom2*vom
+        vom4 = vom2*vom2
+        vom9 = vom4*vom2*vom3
+        dm = self.dm
+        sigx = self.sigma
+        sigx2 = sigx*sigx
+        sx = self.s
+        sx2 = sx*sx
+        eta = self.eta
+        eta2 = eta*eta
+        et2 = et*et
+        et4 = et2*et2
+        et6 = et4*et2
+        et8 = et6*et2
+        et10 = et8*et2
+        et12 = et10*et2
+        et14 = et12*et2
+        kappa1 = self.kappa1
+        kappa2 = self.kappa2
+
+        sqmet2p2 = 1. - et2
+        sqmet2p = np.sqrt(sqmet2p2)
+        sqmet2p5 = np.power(1. - et2, 5./2.)
+        sqmet2p7 = sqmet2p5 * sqmet2p2
+        pref = 5./(32.*vom9*eta)
+        PN0 = (96*sqmet2p7)/(96 + 292*et2 + 37*et4)
+        PN2 = (12*(176*(-299 + 84*eta) + 40*et2*(-8801 + 3990*eta) + et6*(-11717 + 8288*eta) + 14*et4*(-15929 + 10122*eta))*sqmet2p5)/(7*(96 + 292*et2 + 37*et4)**2)
+        PN3 = ((-1 + et2)**7*(179789679820800 + 1010380544409600*et2 + 47093347123200*et4 + 3705385446604800*et6 - 6228810398361600*et8 + 23280334705627776*et10 - 62023162920413520*et12 + 186636591503717147*et14)*np.pi + 78033715200*(-1 + et2)**2*(dm*(3984 + 24832*et2 + 14218*et4 + 621*et6)*sigx + 6*(1952 + 10972*et2 + 5444*et4 + 201*et6)*sx))/(4877107200*(96 + 292*et2 + 37*et4)**2)
+        PN4 = -1./882*((-1 + et2)*(3*et12*(456876000 + 627268623*sqmet2p + 279056960*eta2*sqmet2p - 18648*eta*(9800 + 63551*sqmet2p)) + 12*et8*(25326894600 + 21572009606*eta2*sqmet2p + 84*eta*(-120604260 + (-969754031 + 9940728*(2 + kappa1 + kappa2)*sigx2)*sqmet2p) + sqmet2p*(56974506733 + 1764*(-11601 + 236684*(-1 + dm)*kappa1 - 236684*(1 + dm)*kappa2)*sigx2 - 835021152*(-kappa1 + kappa2 + dm*(2 + kappa1 + kappa2))*sigx*sx - 835021152*(2 + kappa1 + kappa2)*sx2)) + 192*et4*(-1650398400 + 1687303730*eta2*sqmet2p + 147*eta*(4490880 + (-43682749 + 5262480*(2 + kappa1 + kappa2)*sigx2)*sqmet2p) + sqmet2p*(5872066309 + 2646*(-3639 + 146180*(-1 + dm)*kappa1 - 146180*(1 + dm)*kappa2)*sigx2 - 773584560*(-kappa1 + kappa2 + dm*(2 + kappa1 + kappa2))*sigx*sx - 773584560*(2 + kappa1 + kappa2)*sx2)) + 256*et2*(-516287520 + 144448668*eta2*sqmet2p + 441*eta*(468288 + (-931577 + 554688*(2 + kappa1 + kappa2)*sigx2)*sqmet2p) + 2*sqmet2p*(216400679 + 3969*(-301 + 15408*(-1 + dm)*kappa1 - 15408*(1 + dm)*kappa2)*sigx2 - 122308704*(-kappa1 + kappa2 + dm*(2 + kappa1 + kappa2))*sigx*sx - 122308704*(2 + kappa1 + kappa2)*sx2)) + 768*(-10160640 + 4353552*eta2*sqmet2p + 1008*eta*(4032 + (-1963 + 9072*(2 + kappa1 + kappa2)*sigx2)*sqmet2p) + sqmet2p*(3373169 + 63504*(-1 + 72*(-1 + dm)*kappa1 - 72*(1 + dm)*kappa2)*sigx2 - 9144576*(-kappa1 + kappa2 + dm*(2 + kappa1 + kappa2))*sigx*sx - 9144576*(2 + kappa1 + kappa2)*sx2)) + 252*et10*(190864800 - 76345920*eta + 86266684*eta2*sqmet2p + eta*(-364780337 + 1100232*(2 + kappa1 + kappa2)*sigx2)*sqmet2p + 2*sqmet2p*(107095082 + 2331*(-9 + 118*(-1 + dm)*kappa1 - 118*(1 + dm)*kappa2)*sigx2 - 550116*(-kappa1 + kappa2 + dm*(2 + kappa1 + kappa2))*sigx*sx - 550116*(2 + kappa1 + kappa2)*sx2)) + 64*et6*(6653542959*eta2*sqmet2p + 126*eta*(-5131854 + (-213477181 + 9726234*(2 + kappa1 + kappa2)*sigx2)*sqmet2p) + 2*(808267005 + sqmet2p*(11197318984 + 1323*(-8772 + 231577*(-1 + dm)*kappa1 - 231577*(1 + dm)*kappa2)*sigx2 - 612752742*(-kappa1 + kappa2 + dm*(2 + kappa1 + kappa2))*sigx*sx - 612752742*(2 + kappa1 + kappa2)*sx2)))))/(96 + 292*et2 + 37*et4)**3
+        return pref * (PN0 + vom2*PN2 + vom3*PN3 + vom4*PN4)
+
+    def evolve_ltbyv(self, max_step = np.inf):
+        def dydt(v, y):
+            chix = self.chixByvom(v)
+            et = self.etBychix(chix)
+            dldv = self.dldvom(et, v)
+            dtdv = self.dtdvom(et, v)
+            return dldv, dtdv
+        v0 = self.vom0
+        y0 = np.array([0, 0])
+        ret_v = []
+        ret_y = []
+        solver = RK45(dydt, v0, y0, t_bound = np.inf, rtol=1e-13, atol=1e-13, max_step = max_step)
+        while solver.status == 'running':
+            ret_v.append(solver.t)
+            ret_y.append(solver.y)
+            #print((solver.t, solver.y))
+            if solver.t > self.vommax:
+                break
+            solver.step()
+        ret_y = np.asarray(ret_y)
+        l_ret = ret_y[:,0]
+        t_ret = ret_y[:,1]
+        return np.asarray(ret_v), l_ret, t_ret
+
     def evolve(self, max_step = np.inf):
         def dydt(t, y):
             l, vom = y[0], y[1]
@@ -278,12 +386,12 @@ class pypngwtd(object):
         y0 = np.array([0, self.vom0])
         t = []
         y = []
-        solver = RK45(dydt, t0, y0, t_bound = np.inf, rtol=1e-14, atol=1e-14, max_step = max_step)
+        solver = RK45(dydt, t0, y0, t_bound = np.inf, rtol=1e-13, atol=1e-13, max_step = max_step)
         while solver.status == 'running':
             t.append(solver.t)
             y.append(solver.y)
             #print((solver.t, solver.y))
-            if solver.y[1] > self.__vommax:
+            if solver.y[1] > self.vommax:
                 break
             solver.step()
         return np.asarray(t), np.asarray(y)
@@ -306,7 +414,7 @@ class pypngwtd(object):
     #         t.append(solver.t)
     #         y.append(solver.y)
     #         print((solver.t, solver.y))
-    #         if solver.y[1] > self.__vommax:
+    #         if solver.y[1] > self.vommax:
     #             break
     #         solver.step()
     #     return np.asarray(t), np.asarray(y)

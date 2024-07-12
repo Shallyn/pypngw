@@ -48,6 +48,9 @@ typedef struct {
     REAL8 sigx;
     REAL8 sigx2;
 
+    REAL8 eini;
+    REAL8 vomini;
+
     REAL8 hPlusU;
     REAL8 hPlusE;
     COMPLEX16 hPlusL;

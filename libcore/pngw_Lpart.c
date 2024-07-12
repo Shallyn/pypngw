@@ -10,25 +10,10 @@
 
 #include "pngw_Lpart.h"
 
-size_t n_spart_LFunc = 169;
-INT spart_LFunc_lkList[169][2]={{1,-6},{1,-5},{1,-4},{1,-3},{1,-2},{1,-1},{1,0},{1,1},{1,2},{1,3},
-	{1,4},{1,5},{1,6},{2,-6},{2,-5},{2,-4},{2,-3},{2,-2},{2,-1},{2,0},
-	{2,1},{2,2},{2,3},{2,4},{2,5},{2,6},{3,-6},{3,-5},{3,-4},{3,-3},
-	{3,-2},{3,-1},{3,0},{3,1},{3,2},{3,3},{3,4},{3,5},{3,6},{4,-5},
-	{4,-4},{4,-3},{4,-2},{4,-1},{4,0},{4,1},{4,2},{4,3},{4,4},{4,5},
-	{4,6},{5,-5},{5,-4},{5,-3},{5,-2},{5,-1},{5,0},{5,1},{5,2},{5,3},
-	{5,4},{5,5},{5,6},{6,-5},{6,-4},{6,-3},{6,-2},{6,-1},{6,0},{6,1},
-	{6,2},{6,3},{6,4},{6,5},{6,6},{7,-4},{7,-3},{7,-2},{7,-1},{7,0},
-	{7,1},{7,2},{7,3},{7,4},{7,5},{7,6},{8,-4},{8,-3},{8,-2},{8,-1},
-	{8,0},{8,1},{8,2},{8,3},{8,4},{8,5},{8,6},{9,-4},{9,-3},{9,-2},
-	{9,-1},{9,0},{9,1},{9,2},{9,3},{9,4},{9,5},{9,6},{10,-3},{10,-2},
-	{10,-1},{10,0},{10,1},{10,2},{10,3},{10,4},{10,5},{10,6},{11,-3},{11,-2},
-	{11,-1},{11,0},{11,1},{11,2},{11,3},{11,4},{11,5},{11,6},{12,-3},{12,-2},
-	{12,-1},{12,0},{12,1},{12,2},{12,3},{12,4},{12,5},{12,6},{13,-2},{13,-1},
-	{13,0},{13,1},{13,2},{13,3},{13,4},{13,5},{13,6},{14,-1},{14,1},{14,2},
-	{14,3},{14,4},{14,5},{14,6},{15,1},{15,2},{15,3},{15,4},{15,5},{15,6},
-	{16,1},{16,2},{16,3},{16,4},{16,5},{17,2},{17,3},{17,4},{18,3}};
-COMPLEX16 (*spart_LFunc_fList[169])(BBHDynVariables*, BBHDynParams*)={
+extern size_t n_scpart_Func;
+extern INT scpart_Func_lkList[171][2];
+
+COMPLEX16 (*spart_LFunc_fList[171])(BBHDynVariables*, BBHDynParams*)={
 	spart_LPartsl1_km6,
 	spart_LPartsl1_km5,
 	spart_LPartsl1_km4,
@@ -177,12 +162,14 @@ COMPLEX16 (*spart_LFunc_fList[169])(BBHDynVariables*, BBHDynParams*)={
 	spart_LPartsl13_k5,
 	spart_LPartsl13_k6,
 	spart_LPartsl14_km1,
+	NULL,
 	spart_LPartsl14_k1,
 	spart_LPartsl14_k2,
 	spart_LPartsl14_k3,
 	spart_LPartsl14_k4,
 	spart_LPartsl14_k5,
 	spart_LPartsl14_k6,
+	NULL,
 	spart_LPartsl15_k1,
 	spart_LPartsl15_k2,
 	spart_LPartsl15_k3,
@@ -199,25 +186,8 @@ COMPLEX16 (*spart_LFunc_fList[169])(BBHDynVariables*, BBHDynParams*)={
 	spart_LPartsl17_k4,
 	spart_LPartsl18_k3
 };
-size_t n_cpart_LFunc = 169;
-INT cpart_LFunc_lkList[169][2]={{1,-6},{1,-5},{1,-4},{1,-3},{1,-2},{1,-1},{1,0},{1,1},{1,2},{1,3},
-	{1,4},{1,5},{1,6},{2,-6},{2,-5},{2,-4},{2,-3},{2,-2},{2,-1},{2,0},
-	{2,1},{2,2},{2,3},{2,4},{2,5},{2,6},{3,-6},{3,-5},{3,-4},{3,-3},
-	{3,-2},{3,-1},{3,0},{3,1},{3,2},{3,3},{3,4},{3,5},{3,6},{4,-5},
-	{4,-4},{4,-3},{4,-2},{4,-1},{4,0},{4,1},{4,2},{4,3},{4,4},{4,5},
-	{4,6},{5,-5},{5,-4},{5,-3},{5,-2},{5,-1},{5,0},{5,1},{5,2},{5,3},
-	{5,4},{5,5},{5,6},{6,-5},{6,-4},{6,-3},{6,-2},{6,-1},{6,0},{6,1},
-	{6,2},{6,3},{6,4},{6,5},{6,6},{7,-4},{7,-3},{7,-2},{7,-1},{7,0},
-	{7,1},{7,2},{7,3},{7,4},{7,5},{7,6},{8,-4},{8,-3},{8,-2},{8,-1},
-	{8,0},{8,1},{8,2},{8,3},{8,4},{8,5},{8,6},{9,-4},{9,-3},{9,-2},
-	{9,-1},{9,0},{9,1},{9,2},{9,3},{9,4},{9,5},{9,6},{10,-3},{10,-2},
-	{10,-1},{10,0},{10,1},{10,2},{10,3},{10,4},{10,5},{10,6},{11,-3},{11,-2},
-	{11,-1},{11,0},{11,1},{11,2},{11,3},{11,4},{11,5},{11,6},{12,-3},{12,-2},
-	{12,-1},{12,0},{12,1},{12,2},{12,3},{12,4},{12,5},{12,6},{13,-2},{13,-1},
-	{13,0},{13,1},{13,2},{13,3},{13,4},{13,5},{13,6},{14,-1},{14,1},{14,2},
-	{14,3},{14,4},{14,5},{14,6},{15,1},{15,2},{15,3},{15,4},{15,5},{15,6},
-	{16,1},{16,2},{16,3},{16,4},{16,5},{17,2},{17,3},{17,4},{18,3}};
-COMPLEX16 (*cpart_LFunc_fList[169])(BBHDynVariables*, BBHDynParams*)={
+
+COMPLEX16 (*cpart_LFunc_fList[171])(BBHDynVariables*, BBHDynParams*)={
 	cpart_LPartsl1_km6,
 	cpart_LPartsl1_km5,
 	cpart_LPartsl1_km4,
@@ -366,12 +336,14 @@ COMPLEX16 (*cpart_LFunc_fList[169])(BBHDynVariables*, BBHDynParams*)={
 	cpart_LPartsl13_k5,
 	cpart_LPartsl13_k6,
 	cpart_LPartsl14_km1,
+	NULL,
 	cpart_LPartsl14_k1,
 	cpart_LPartsl14_k2,
 	cpart_LPartsl14_k3,
 	cpart_LPartsl14_k4,
 	cpart_LPartsl14_k5,
 	cpart_LPartsl14_k6,
+	NULL,
 	cpart_LPartsl15_k1,
 	cpart_LPartsl15_k2,
 	cpart_LPartsl15_k3,
@@ -386,33 +358,59 @@ COMPLEX16 (*cpart_LFunc_fList[169])(BBHDynVariables*, BBHDynParams*)={
 	cpart_LPartsl17_k2,
 	cpart_LPartsl17_k3,
 	cpart_LPartsl17_k4,
-	cpart_LPartsl18_k3
+	cpart_LPartsl18_k3	
 };
 
 COMPLEX16 calculate_QLPart_waveform(REAL8 lval, BBHDynVariables *var, BBHDynParams *pms)
 {
     REAL8 k = calculate_k(var, pms);
-    COMPLEX16 ret;
+    COMPLEX16 ret = 0.0;
     INT nl, nk;
-    ret = 0.0;
-    for (INT i=0; i<n_spart_LFunc; i++) {
-        nl = spart_LFunc_lkList[i][0];
-        nk = spart_LFunc_lkList[i][1];
-        // tmp = spart_LFunc_fList[i](var, pms);
-        // print_debug("spart:(%d, %d) = (%e + I %e)\n", nl, nk, creal(tmp), cimag(tmp));
-        ret += spart_LFunc_fList[i](var, pms)*sin((nl + nk*k)*lval);
+    for (INT i=0; i<n_scpart_Func; i++) {
+        nl = scpart_Func_lkList[i][0];
+        nk = scpart_Func_lkList[i][1];
+		if (cpart_LFunc_fList[i] != NULL)
+			ret += cpart_LFunc_fList[i](var, pms)*cos((nl + nk*k)*lval);
+		if (spart_LFunc_fList[i] != NULL)
+			ret += spart_LFunc_fList[i](var, pms)*sin((nl + nk*k)*lval);
     }
-    for (INT i=0; i<n_cpart_LFunc; i++) {
-        nl = cpart_LFunc_lkList[i][0];
-        nk = cpart_LFunc_lkList[i][1];
-        // tmp = cpart_LFunc_fList[i](var, pms);
-        // print_debug("cpart:(%d, %d) = (%e + I %e)\n", nl, nk, creal(tmp), cimag(tmp));
-        ret += cpart_LFunc_fList[i](var, pms)*cos((nl + nk*k)*lval);
-    }
-
-    // ret = spart_LPartsl2_k2(var, pms) * sin((2. + 2.*k)*lval) +
-    //     cpart_LPartsl2_k2(var, pms) * cos((2. + 2.*k)*lval);
     return ret;
+}
+
+COMPLEX16 calculate_QLPart_waveform_emode(INT ilk, REAL8 lval, BBHDynVariables *var, BBHDynParams *pms)
+{
+    REAL8 k = calculate_k(var, pms);
+    COMPLEX16 ret = 0.0;
+	if (ilk < 0)
+		return ret;
+    INT nl, nk;
+	nl = scpart_Func_lkList[ilk][0];
+	nk = scpart_Func_lkList[ilk][1];
+	if (cpart_LFunc_fList[ilk] != NULL)
+		ret += cpart_LFunc_fList[ilk](var, pms)*cos((nl + nk*k)*lval);
+	if (spart_LFunc_fList[ilk] != NULL)
+		ret += spart_LFunc_fList[ilk](var, pms)*sin((nl + nk*k)*lval);
+    return ret;
+}
+
+INT calculate_QLPart_waveform_ecoeff(INT ilk, REAL8 lval, BBHDynVariables *var, BBHDynParams *pms,
+		COMPLEX16 *ret_QPlus, COMPLEX16 *ret_QMinus)
+{
+    COMPLEX16 Qc = 0.0, Qs = 0.0;
+	if (ilk < 0) {
+		*ret_QPlus = 0.0;
+		*ret_QMinus = 0.0;
+		return X_SUCCESS;
+	}
+	if (cpart_LFunc_fList[ilk] != NULL)
+		Qc = cpart_LFunc_fList[ilk](var, pms);
+	if (spart_LFunc_fList[ilk] != NULL)
+		Qs = spart_LFunc_fList[ilk](var, pms);
+	*ret_QPlus = 0.5*(Qc + I*Qs);
+	*ret_QMinus = 0.5*(Qc - I*Qs);
+	// *ret_QPlus = Qc;
+	// *ret_QMinus = Qs;
+    return X_SUCCESS;
 }
 
 COMPLEX16 spart_LPartsl1_km6(BBHDynVariables *var, BBHDynParams *pms)

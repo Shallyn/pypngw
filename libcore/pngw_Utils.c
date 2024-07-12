@@ -11,7 +11,39 @@
 #include "pngw_Utils.h"
 #include <pngw_Datatypes.h>
 
-BBHDynParams *CreateBBHDynParams(REAL8 eta, REAL8 chi1, REAL8 chi2, REAL8 kappa1, REAL8 kappa2, REAL8 Theta, REAL8 Phi)
+size_t n_scpart_Func = 171;
+INT scpart_Func_lkList[171][2]={{1,-6},{1,-5},{1,-4},{1,-3},{1,-2},{1,-1},{1,0},{1,1},{1,2},{1,3},
+	{1,4},{1,5},{1,6},{2,-6},{2,-5},{2,-4},{2,-3},{2,-2},{2,-1},{2,0},
+	{2,1},{2,2},{2,3},{2,4},{2,5},{2,6},{3,-6},{3,-5},{3,-4},{3,-3},
+	{3,-2},{3,-1},{3,0},{3,1},{3,2},{3,3},{3,4},{3,5},{3,6},{4,-5},{4,-4},{4,-3},{4,-2},{4,-1},{4,0},{4,1},{4,2},{4,3},{4,4},
+	{4,5},{4,6},{5,-5},{5,-4},{5,-3},{5,-2},{5,-1},{5,0},{5,1},
+	{5,2},{5,3},{5,4},{5,5},{5,6},{6,-5},{6,-4},{6,-3},{6,-2},
+	{6,-1},{6,0},{6,1},{6,2},{6,3},{6,4},{6,5},{6,6},{7,-4},{7,-3},{7,-2},{7,-1},{7,0},{7,1},{7,2},{7,3},{7,4},{7,5},
+	{7,6},{8,-4},{8,-3},{8,-2},{8,-1},{8,0},{8,1},{8,2},
+	{8,3},{8,4},{8,5},{8,6},{9,-4},{9,-3},{9,-2},{9,-1},
+	{9,0},{9,1},{9,2},{9,3},{9,4},{9,5},{9,6},{10,-3},{10,-2},{10,-1},{10,0},{10,1},{10,2},{10,3},{10,4},{10,5},{10,6},
+	{11,-3},{11,-2},{11,-1},{11,0},{11,1},{11,2},{11,3},
+	{11,4},{11,5},{11,6},{12,-3},{12,-2},{12,-1},{12,0},
+	{12,1},{12,2},{12,3},{12,4},{12,5},{12,6},{13,-2},{13,-1},{13,0},{13,1},{13,2},{13,3},{13,4},{13,5},{13,6},{14,-1},{14,0},{14,1},{14,2},{14,3},{14,4},
+	{14,5},{14,6},{15,0},{15,1},
+	{15,2},{15,3},{15,4},{15,5},{15,6},{16,1},{16,2},{16,3},{16,4},{16,5},{17,2},{17,3},{17,4},{18,3}};
+
+
+INT get_ilk_from_nm(INT n, INT m)
+{
+    INT nl, nk, ret = -1;
+    for (INT i=0; i<n_scpart_Func; i++) {
+        nl = scpart_Func_lkList[i][0];
+        nk = scpart_Func_lkList[i][1];
+        if (nl == m && nk == n) {
+            ret = i;
+            break;
+        }
+    }
+    return ret;
+}
+
+BBHDynParams *CreateBBHDynParams(REAL8 eta, REAL8 chi1, REAL8 chi2, REAL8 kappa1, REAL8 kappa2, REAL8 Theta, REAL8 Phi, REAL8 eini, REAL8 vomini)
 {
     BBHDynParams *ret = (BBHDynParams*)MYMalloc(sizeof(BBHDynParams));
     ret->eta = eta;
@@ -24,6 +56,9 @@ BBHDynParams *CreateBBHDynParams(REAL8 eta, REAL8 chi1, REAL8 chi2, REAL8 kappa1
     ret->sx2 = ret->sx*ret->sx;
     ret->sigx = -0.5*(1. + ret->dm)*chi1 + 0.5*(1. - ret->dm)*chi2;
     ret->sigx2 = ret->sigx*ret->sigx;
+
+    ret->eini = eini;
+    ret->vomini = vomini;
 
     ret->hPlusU = -0.5*sin(Theta)*sin(Theta);
     ret->hPlusE = -ret->hPlusU;
@@ -109,7 +144,7 @@ BBHCore *CreateBBHCore(REAL8 eta, REAL8 chi1, REAL8 chi2, REAL8 kappa1, REAL8 ka
     REAL8 Theta, REAL8 Phi, REAL8 e0, REAL8 vom)
 {
     BBHCore *ret = (BBHCore*)MYMalloc(sizeof(BBHCore));
-    ret->pms = CreateBBHDynParams(eta, chi1, chi2, kappa1, kappa2, Theta, Phi);
+    ret->pms = CreateBBHDynParams(eta, chi1, chi2, kappa1, kappa2, Theta, Phi, e0, vom);
     ret->var = (BBHDynVariables*)MYMalloc(sizeof(BBHDynVariables));
     SetBBHDynVariables(e0, vom, ret->var);
     return ret;

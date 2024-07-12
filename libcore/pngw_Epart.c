@@ -10,93 +10,355 @@
 
 #include "pngw_Epart.h"
 
-size_t n_spart_EFunc = 36;
-INT spart_EFunc_lkList[36][2]={{1,-3},{1,-1},{1,1},{1,3},{2,-3},{2,-1}\
-,{2,1},{2,3},{3,-3},{3,-1},
-	{3,1},{3,3},{4,-3},{4,-1},{4,1},{4,3},{5,-3},{5,-1},{5,1},{5,3},
-	{6,-3},{6,-1},{6,1},{6,3},{7,-1},{7,1},{7,3},{8,-1},{8,1},{8,3},
-	{9,1},{9,3},{10,1},{10,3},{11,3},{12,3}};
-REAL8 (*spart_EFunc_fList[36])(BBHDynVariables*, BBHDynParams*)={
+extern size_t n_scpart_Func;
+extern INT scpart_Func_lkList[171][2];
+
+REAL8 (*spart_EFunc_fList[171])(BBHDynVariables*, BBHDynParams*)={
+	NULL,
+	NULL,
+	NULL,
 	spart_EPartsl1_km3,
+	NULL,
 	spart_EPartsl1_km1,
+	NULL,
 	spart_EPartsl1_k1,
+	NULL,
 	spart_EPartsl1_k3,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
 	spart_EPartsl2_km3,
+	NULL,
 	spart_EPartsl2_km1,
+	NULL,
 	spart_EPartsl2_k1,
+	NULL,
 	spart_EPartsl2_k3,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
 	spart_EPartsl3_km3,
+	NULL,
 	spart_EPartsl3_km1,
+	NULL,
 	spart_EPartsl3_k1,
+	NULL,
 	spart_EPartsl3_k3,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
 	spart_EPartsl4_km3,
+	NULL,
 	spart_EPartsl4_km1,
+	NULL,
 	spart_EPartsl4_k1,
+	NULL,
 	spart_EPartsl4_k3,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
 	spart_EPartsl5_km3,
+	NULL,
 	spart_EPartsl5_km1,
+	NULL,
 	spart_EPartsl5_k1,
+	NULL,
 	spart_EPartsl5_k3,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
 	spart_EPartsl6_km3,
+	NULL,
 	spart_EPartsl6_km1,
+	NULL,
 	spart_EPartsl6_k1,
+	NULL,
 	spart_EPartsl6_k3,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
 	spart_EPartsl7_km1,
+	NULL,
 	spart_EPartsl7_k1,
+	NULL,
 	spart_EPartsl7_k3,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
 	spart_EPartsl8_km1,
+	NULL,
 	spart_EPartsl8_k1,
+	NULL,
 	spart_EPartsl8_k3,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
 	spart_EPartsl9_k1,
+	NULL,
 	spart_EPartsl9_k3,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
 	spart_EPartsl10_k1,
+	NULL,
 	spart_EPartsl10_k3,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
 	spart_EPartsl11_k3,
-	spart_EPartsl12_k3
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	spart_EPartsl12_k3,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL
 };
-size_t n_cpart_EFunc = 36;
-INT cpart_EFunc_lkList[36][2]={{1,-3},{1,-1},{1,1},{1,3},{2,-3},{2,-1}\
-,{2,1},{2,3},{3,-3},{3,-1},
-	{3,1},{3,3},{4,-3},{4,-1},{4,1},{4,3},{5,-3},{5,-1},{5,1},{5,3},
-	{6,-3},{6,-1},{6,1},{6,3},{7,-1},{7,1},{7,3},{8,-1},{8,1},{8,3},
-	{9,1},{9,3},{10,1},{10,3},{11,3},{12,3}};
-REAL8 (*cpart_EFunc_fList[36])(BBHDynVariables*, BBHDynParams*)={
+
+REAL8 (*cpart_EFunc_fList[171])(BBHDynVariables*, BBHDynParams*)={
+	NULL,
+	NULL,
+	NULL,
 	cpart_EPartsl1_km3,
+	NULL,
 	cpart_EPartsl1_km1,
+	NULL,
 	cpart_EPartsl1_k1,
+	NULL,
 	cpart_EPartsl1_k3,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
 	cpart_EPartsl2_km3,
+	NULL,
 	cpart_EPartsl2_km1,
+	NULL,
 	cpart_EPartsl2_k1,
+	NULL,
 	cpart_EPartsl2_k3,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
 	cpart_EPartsl3_km3,
+	NULL,
 	cpart_EPartsl3_km1,
+	NULL,
 	cpart_EPartsl3_k1,
+	NULL,
 	cpart_EPartsl3_k3,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
 	cpart_EPartsl4_km3,
+	NULL,
 	cpart_EPartsl4_km1,
+	NULL,
 	cpart_EPartsl4_k1,
+	NULL,
 	cpart_EPartsl4_k3,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
 	cpart_EPartsl5_km3,
+	NULL,
 	cpart_EPartsl5_km1,
+	NULL,
 	cpart_EPartsl5_k1,
+	NULL,
 	cpart_EPartsl5_k3,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
 	cpart_EPartsl6_km3,
+	NULL,
 	cpart_EPartsl6_km1,
+	NULL,
 	cpart_EPartsl6_k1,
+	NULL,
 	cpart_EPartsl6_k3,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
 	cpart_EPartsl7_km1,
+	NULL,
 	cpart_EPartsl7_k1,
+	NULL,
 	cpart_EPartsl7_k3,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
 	cpart_EPartsl8_km1,
+	NULL,
 	cpart_EPartsl8_k1,
+	NULL,
 	cpart_EPartsl8_k3,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
 	cpart_EPartsl9_k1,
+	NULL,
 	cpart_EPartsl9_k3,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
 	cpart_EPartsl10_k1,
+	NULL,
 	cpart_EPartsl10_k3,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
 	cpart_EPartsl11_k3,
-	cpart_EPartsl12_k3
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	cpart_EPartsl12_k3,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL
 };
 
 REAL8 calculate_QEPart_waveform(REAL8 lval, BBHDynVariables *var, BBHDynParams *pms)
@@ -104,17 +366,53 @@ REAL8 calculate_QEPart_waveform(REAL8 lval, BBHDynVariables *var, BBHDynParams *
     REAL8 k = calculate_k(var, pms);
     REAL8 ret = 0.0;
     INT nl, nk;
-    for (INT i=0; i<n_cpart_EFunc; i++) {
-        nl = cpart_EFunc_lkList[i][0];
-        nk = cpart_EFunc_lkList[i][1];
-        ret += cpart_EFunc_fList[i](var, pms)*cos((nl + nk*k)*lval);
-    }
-    for (INT i=0; i<n_spart_EFunc; i++) {
-        nl = spart_EFunc_lkList[i][0];
-        nk = spart_EFunc_lkList[i][1];
-        ret += spart_EFunc_fList[i](var, pms)*sin((nl + nk*k)*lval);
+    for (INT i=0; i<n_scpart_Func; i++) {
+        nl = scpart_Func_lkList[i][0];
+        nk = scpart_Func_lkList[i][1];
+		if (cpart_EFunc_fList[i] != NULL)
+			ret += cpart_EFunc_fList[i](var, pms)*cos((nl + nk*k)*lval);
+		if (spart_EFunc_fList[i] != NULL)
+			ret += spart_EFunc_fList[i](var, pms)*sin((nl + nk*k)*lval);
     }
     return ret;
+}
+
+REAL8 calculate_QEPart_waveform_emode(INT ilk, REAL8 lval, BBHDynVariables *var, BBHDynParams *pms)
+{
+    REAL8 k = calculate_k(var, pms);
+    REAL8 ret = 0.0;
+	if (ilk < 0)
+		return ret;
+    INT nl, nk;
+	nl = scpart_Func_lkList[ilk][0];
+	nk = scpart_Func_lkList[ilk][1];
+	if (cpart_EFunc_fList[ilk] != NULL)
+		ret += cpart_EFunc_fList[ilk](var, pms)*cos((nl + nk*k)*lval);
+	if (spart_EFunc_fList[ilk] != NULL)
+		ret += spart_EFunc_fList[ilk](var, pms)*sin((nl + nk*k)*lval);
+    return ret;
+}
+
+INT calculate_QEPart_waveform_ecoeff(INT ilk, REAL8 lval, BBHDynVariables *var, BBHDynParams *pms,
+		COMPLEX16 *ret_QPlus, COMPLEX16 *ret_QMinus)
+{
+    COMPLEX16 Qc = 0.0, Qs = 0.0;
+	if (ilk < 0) {
+		*ret_QPlus = 0.0;
+		*ret_QMinus = 0.0;
+		return X_SUCCESS;
+	}
+	if (cpart_EFunc_fList[ilk] != NULL) 
+		Qc = cpart_EFunc_fList[ilk](var, pms);
+
+	if (spart_EFunc_fList[ilk] != NULL) {
+		Qs = spart_EFunc_fList[ilk](var, pms);
+	}
+	*ret_QPlus = 0.5*(Qc + I*Qs);
+	*ret_QMinus = 0.5*(Qc - I*Qs);
+	// *ret_QPlus = Qc;
+	// *ret_QMinus = Qs;
+    return X_SUCCESS;
 }
 
 REAL8 spart_EPartsl1_km3(BBHDynVariables *var, BBHDynParams *pms)

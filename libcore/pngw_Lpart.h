@@ -13,7 +13,9 @@
 #include "pngw.h"
 
 COMPLEX16 calculate_QLPart_waveform(REAL8 lval, BBHDynVariables *var, BBHDynParams *pms);
-
+COMPLEX16 calculate_QLPart_waveform_emode(INT ilk, REAL8 lval, BBHDynVariables *var, BBHDynParams *pms);
+INT calculate_QLPart_waveform_ecoeff(INT ilk, REAL8 lval, BBHDynVariables *var, BBHDynParams *pms,
+		COMPLEX16 *ret_QPlus, COMPLEX16 *ret_QMinus);
 
 COMPLEX16 spart_LPartsl1_km6(BBHDynVariables *var, BBHDynParams *pms);
 COMPLEX16 cpart_LPartsl1_km6(BBHDynVariables *var, BBHDynParams *pms);

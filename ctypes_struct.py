@@ -57,6 +57,8 @@ class pyBBHDynParams(ctypes.Structure):
         ('sx2', ctypes.c_double),
         ('sigx', ctypes.c_double),
         ('sigx2', ctypes.c_double),
+        ('eini', ctypes.c_double),
+        ('vomini', ctypes.c_double),
         ('hPlusU', ctypes.c_double),
         ('hPlusE', ctypes.c_double),
         ('hPlusL', c_complex),

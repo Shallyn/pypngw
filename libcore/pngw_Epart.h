@@ -13,7 +13,9 @@
 #include "pngw.h"
 
 REAL8 calculate_QEPart_waveform(REAL8 lval, BBHDynVariables *var, BBHDynParams *pms);
-
+REAL8 calculate_QEPart_waveform_emode(INT ilk, REAL8 lval, BBHDynVariables *var, BBHDynParams *pms);
+INT calculate_QEPart_waveform_ecoeff(INT ilk, REAL8 lval, BBHDynVariables *var, BBHDynParams *pms,
+		COMPLEX16 *ret_QPlus, COMPLEX16 *ret_QMinus);
 
 REAL8 spart_EPartsl1_km3(BBHDynVariables *var, BBHDynParams *pms);
 REAL8 cpart_EPartsl1_km3(BBHDynVariables *var, BBHDynParams *pms);
