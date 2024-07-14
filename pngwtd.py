@@ -17,6 +17,62 @@ MSUN_TSCALE = 4.927200467232548e-6
 MSUN_RSCALE = 1.47662504e3
 MPARSEC = 3.08567758e22
 
+
+class DetectorInfo(object):
+    def __init__(self, latitude, longitude, orientation, aperture):
+        self.__latitude = latitude
+        self.__longitude = longitude
+        self.__orientation = orientation
+        self.__aperture = aperture
+
+    @property
+    def latitude(self):
+        return self.__latitude
+    @property
+    def lbd(self):
+        return self.__latitude
+
+    @property
+    def longitude(self):
+        return self.__longitude
+    @property
+    def varphi(self):
+        return self.__longitude
+
+    @property
+    def orientation(self):
+        return self.__orientation
+    @property
+    def gamma(self):
+        return self.__orientation
+
+    @property
+    def aperture(self):
+        return self.__aperture
+    @property
+    def zeta(self):
+        return self.__aperture
+# 2207.02771
+Detector_CE1 = DetectorInfo(latitude = 46.5*np.pi/180, longitude = -119.4*np.pi/180, orientation = 171*np.pi/180, aperture = np.pi/2)
+Detector_CE2 = DetectorInfo(latitude = 30.6*np.pi/180, longitude = -90.8*np.pi/180, orientation = 242.7*np.pi/180, aperture = np.pi/2)
+Detector_ET1 = DetectorInfo(latitude = 40.5*np.pi/180, longitude = 9.4*np.pi/180, orientation = 0*np.pi/180, aperture = np.pi/3)
+Detector_ET2 = DetectorInfo(latitude = 40.5*np.pi/180, longitude = 9.4*np.pi/180, orientation = 120*np.pi/180, aperture = np.pi/3)
+Detector_ET3 = DetectorInfo(latitude = 40.5*np.pi/180, longitude = 9.4*np.pi/180, orientation = 240*np.pi/180, aperture = np.pi/3)
+Detector_H1 = DetectorInfo(latitude = 46.5*np.pi/180, longitude = -119.4*np.pi/180, orientation = 171*np.pi/180, aperture = np.pi/2)
+Detector_L1 = DetectorInfo(latitude = 30.6*np.pi/180, longitude = -90.8*np.pi/180, orientation = 242.7*np.pi/180, aperture = np.pi/2)
+Detector_Virgo = DetectorInfo(latitude = 43.6*np.pi/180, longitude = 10.5*np.pi/180, orientation = 115.6*np.pi/180, aperture = np.pi/2)
+Detector_KAGRA = DetectorInfo(latitude = 36.4*np.pi/180, longitude = 137.3*np.pi/180, orientation = 15.4*np.pi/180, aperture = np.pi/2)
+DetectorDict = {'CE1':Detector_CE1,
+                'CE2':Detector_CE2,
+                'ET1': Detector_ET1,
+                'ET2': Detector_ET2,
+                'ET3': Detector_ET3,
+                'H1': Detector_H1,
+                'L1': Detector_L1,
+                'Virgo':Detector_Virgo,
+                'KAGRA':Detector_KAGRA}
+
+
 DEFAULT_V_ISCO = 1/np.sqrt(6)
 DEFAULT_m1 = 30
 DEFAULT_m2 = 30

@@ -12,7 +12,7 @@ import ctypes
 from scipy.integrate import solve_ivp
 
 from .ctypes_struct import *
-from .pngwtd import pypngwtd
+from .pngwtd import pypngwtd, DetectorDict
 from pathlib import Path
 import json
 
@@ -41,6 +41,11 @@ myLib.calculate_QpcWaveform_QhMinus.restype = c_complex
 
 myLib.calc_QSPA_emode.restype = ctypes.c_int
 myLib.calc_QSPA_Allemode.restype = ctypes.c_int
+myLib.calc_QstrainSPA_Allemode.restype = ctypes.c_int
+
+myLib.CreateAntennaPatternF.restype = ctypes.POINTER(pyAntennaPatternF)
+myLib.DestroyAntennaPatternF.restype = None
+myLib.calculate_QWaveformVec.restype = ctypes.c_int
 # myLib.tmpUtils.restype = ctypes.c_double
 # def test_func(val:float):
 #     return myLib.tmpUtils(ctypes.c_double(val))
@@ -68,6 +73,267 @@ def convert_ndarray_to_REAL8Vector(vec:np.ndarray):
     # print(vec.ctypes.data_as(ctypes.POINTER(ctypes.c_double)))
     # ctypes.memmove(ret.contents.data, vec.ctypes.data, vec.nbytes)
     return ret
+
+#psi, ra, dec, latitude, longtitude, gamma, zeta = np.pi/2
+class AntennaPatternF(object):
+    def __init__(self, detname:str, **kwargs):
+        c_SI = 299792458 # Speed Of Light [m s^-1]
+
+        self.__psi = kwargs.get('psi', 0)
+        self.__alpha = kwargs.get('ra', 0)
+        self.__delta = kwargs.get('dec', 0)
+
+        self.__lbd = DetectorDict[detname].lbd
+        self.__varphi = DetectorDict[detname].varphi
+        self.__gamma = DetectorDict[detname].gamma
+        self.__zeta = DetectorDict[detname].zeta
+        self.__ccore = myLib.CreateAntennaPatternF(
+            ctypes.c_double(self.__psi),
+            ctypes.c_double(self.__alpha),
+            ctypes.c_double(self.__delta),
+            ctypes.c_double(self.__lbd),
+            ctypes.c_double(self.__varphi),
+            ctypes.c_double(self.__gamma),
+            ctypes.c_double(self.__zeta))
+        # self.__lbd = kwargs.get('latitude', DEFAULT_latitude)
+        # self.__varphi = kwargs.get('longtitude', DEFAULT_longtitude)
+        # self.__gamma = kwargs.get('gamma', DEFAULT_gamma)
+        # self.__zeta = kwargs.get('zeta', DEFAULT_zeta)
+
+        self.__alphi = self.__alpha - self.__varphi
+        self.__sin_zeta = np.sin(self.__zeta)
+        self.__sin_2psi = np.sin(2.*self.__psi)
+        self.__cos_2psi = np.cos(2.*self.__psi)
+        self.__sin_2alphi = np.sin(2.*self.__alphi)
+        self.__cos_2alphi = np.cos(2.*self.__alphi)
+        self.__sin_alphi = np.sin(self.__alphi)
+        self.__cos_alphi = np.cos(self.__alphi)
+        self.__sin_2gamma = np.sin(2.*self.__gamma)
+        self.__cos_2gamma = np.cos(2.*self.__gamma)
+        self.__sin_2delta = np.sin(2.*self.__delta)
+        self.__cos_2delta = np.cos(2.*self.__delta)
+        self.__sin_delta = np.sin(self.__delta)
+        self.__cos_delta = np.cos(self.__delta)
+        self.__sin_2lambda = np.sin(2.*self.__lbd)
+        self.__cos_2lambda = np.cos(2.*self.__lbd)
+        self.__sin_lambda = np.sin(self.__lbd)
+        self.__cos_lambda = np.cos(self.__lbd)
+        self.__3MinusCos2Lambda = 3.-self.__cos_2lambda
+        self.__3MinusCos2Delta = 3.-self.__cos_2delta
+        
+        self.__Gplus = (1./16.)*self.__sin_2gamma*self.__3MinusCos2Lambda*self.__3MinusCos2Delta*self.__cos_2alphi \
+            -0.25*self.__cos_2gamma*self.__sin_lambda*self.__3MinusCos2Delta*self.__sin_2alphi \
+            +0.25*self.__sin_2gamma*self.__sin_2lambda*self.__sin_2delta*self.__cos_alphi \
+            -0.5*self.__cos_2gamma*self.__cos_lambda*self.__sin_2delta*self.__sin_alphi \
+            +0.75*self.__sin_2gamma*self.__cos_lambda*self.__cos_lambda*self.__cos_delta*self.__cos_delta
+        self.__Gcross = self.__cos_2gamma*self.__sin_lambda*self.__sin_delta*self.__cos_2alphi \
+            +0.25*self.__sin_2gamma*self.__3MinusCos2Lambda*self.__sin_delta*self.__sin_2alphi \
+            +self.__cos_2gamma*self.__cos_lambda*self.__cos_delta*self.__cos_alphi \
+            +0.5*self.__sin_2gamma*self.__sin_2lambda*self.__cos_delta*self.__sin_alphi
+
+        self.__Gplus_deriv_alpha = -0.25*self.__sin_2gamma*self.__sin_2delta*self.__sin_2lambda*self.__sin_alphi \
+            -0.5*self.__cos_2gamma*self.__sin_2delta*self.__cos_lambda*self.__cos_alphi \
+            -0.5*self.__cos_2gamma*self.__3MinusCos2Delta*self.__sin_lambda*self.__cos_2alphi \
+            -0.125*self.__sin_2gamma*self.__3MinusCos2Delta*self.__3MinusCos2Lambda*self.__sin_2alphi
+        
+        self.__Gplus_deriv_delta = -self.__cos_2gamma*self.__cos_2delta*self.__cos_lambda*self.__sin_alphi \
+            +0.125*self.__sin_2gamma*self.__sin_2delta*self.__3MinusCos2Lambda*self.__cos_2alphi \
+            +0.5*self.__sin_2gamma*self.__cos_2delta*self.__sin_2lambda*self.__cos_alphi \
+            -0.5*self.__cos_2gamma*self.__sin_2delta*self.__sin_lambda*self.__sin_2alphi \
+            -1.5*self.__sin_2gamma*self.__sin_delta*self.__cos_delta*self.__cos_lambda*self.__cos_lambda
+        
+        self.__Gcross_deriv_alpha = 0.5*self.__sin_2gamma*self.__sin_delta*self.__3MinusCos2Lambda*self.__cos_2alphi \
+            -2.*self.__cos_2gamma*self.__sin_delta*self.__sin_lambda*self.__sin_2alphi \
+            +0.5*self.__sin_2gamma*self.__cos_delta*self.__sin_2lambda*self.__cos_alphi \
+            -self.__cos_2gamma*self.__cos_delta*self.__cos_lambda*self.__sin_alphi
+        
+        self.__Gcross_deriv_delta = -0.5*self.__sin_2gamma*self.__sin_delta*self.__sin_2lambda*self.__sin_alphi \
+            -self.__cos_2gamma*self.__sin_delta*self.__cos_lambda*self.__cos_alphi \
+            +self.__cos_2gamma*self.__cos_delta*self.__sin_lambda*self.__cos_2alphi \
+            +0.25*self.__sin_2gamma*self.__cos_delta*self.__3MinusCos2Lambda*self.__sin_2alphi
+        dt_earth = 6371e3/c_SI
+        self.__delta_t = dt_earth * (self.__cos_lambda*self.__sin_delta + self.__cos_delta*self.__sin_lambda*self.__cos_alphi)
+        self.__delta_t_deriv_alpha = -dt_earth * self.__cos_delta*self.__sin_lambda*self.__sin_alphi
+        self.__delta_t_deriv_delta = dt_earth * (self.__cos_delta*self.__cos_lambda - self.__cos_alphi*self.__sin_delta*self.__sin_lambda)
+        self.__OmegaEarth = 2.*np.pi/(24.*60.*60.)
+
+    @property
+    def ccore(self):
+        return self.__ccore
+    @property
+    def Gplus(self):
+        return self.__Gplus
+    def Gplus_t(self, t_SI):
+        alphi_t = self.__alphi - self.__OmegaEarth * t_SI
+        cos_2alphi_t = np.cos(2.*alphi_t)
+        sin_2alphi_t = np.sin(2.*alphi_t)
+        cos_alphi_t = np.cos(alphi_t)
+        sin_alphi_t = np.sin(alphi_t)
+        return (1./16.)*self.__sin_2gamma*self.__3MinusCos2Lambda*self.__3MinusCos2Delta*cos_2alphi_t \
+            -0.25*self.__cos_2gamma*self.__sin_lambda*self.__3MinusCos2Delta*sin_2alphi_t \
+            +0.25*self.__sin_2gamma*self.__sin_2lambda*self.__sin_2delta*cos_alphi_t \
+            -0.5*self.__cos_2gamma*self.__cos_lambda*self.__sin_2delta*sin_alphi_t \
+            +0.75*self.__sin_2gamma*self.__cos_lambda*self.__cos_lambda*self.__cos_delta*self.__cos_delta
+
+    @property
+    def Gcross(self):
+        return self.__Gcross
+    def Gcross_t(self, t_SI):
+        alphi_t = self.__alphi - self.__OmegaEarth * t_SI
+        cos_2alphi_t = np.cos(2.*alphi_t)
+        sin_2alphi_t = np.sin(2.*alphi_t)
+        cos_alphi_t = np.cos(alphi_t)
+        sin_alphi_t = np.sin(alphi_t)
+        return self.__cos_2gamma*self.__sin_lambda*self.__sin_delta*cos_2alphi_t \
+                    +0.25*self.__sin_2gamma*self.__3MinusCos2Lambda*self.__sin_delta*sin_2alphi_t \
+                    +self.__cos_2gamma*self.__cos_lambda*self.__cos_delta*cos_alphi_t \
+                    +0.5*self.__sin_2gamma*self.__sin_2lambda*self.__cos_delta*sin_alphi_t
+
+    @property
+    def Gplus_deriv_alpha(self):
+        return self.__Gplus_deriv_alpha
+    def Gplus_deriv_alpha_t(self, t_SI):
+        alphi_t = self.__alphi - self.__OmegaEarth * t_SI
+        cos_2alphi_t = np.cos(2.*alphi_t)
+        sin_2alphi_t = np.sin(2.*alphi_t)
+        cos_alphi_t = np.cos(alphi_t)
+        sin_alphi_t = np.sin(alphi_t)
+        return -0.25*self.__sin_2gamma*self.__sin_2delta*self.__sin_2lambda*sin_alphi_t \
+            -0.5*self.__cos_2gamma*self.__sin_2delta*self.__cos_lambda*cos_alphi_t \
+            -0.5*self.__cos_2gamma*self.__3MinusCos2Delta*self.__sin_lambda*cos_2alphi_t \
+            -0.125*self.__sin_2gamma*self.__3MinusCos2Delta*self.__3MinusCos2Lambda*sin_2alphi_t
+
+    @property
+    def Gplus_deriv_delta(self):
+        return self.__Gplus_deriv_delta
+    def Gplus_deriv_delta_t(self, t_SI):
+        alphi_t = self.__alphi - self.__OmegaEarth * t_SI
+        cos_2alphi_t = np.cos(2.*alphi_t)
+        sin_2alphi_t = np.sin(2.*alphi_t)
+        cos_alphi_t = np.cos(alphi_t)
+        sin_alphi_t = np.sin(alphi_t)
+        return -self.__cos_2gamma*self.__cos_2delta*self.__cos_lambda*sin_alphi_t \
+            +0.125*self.__sin_2gamma*self.__sin_2delta*self.__3MinusCos2Lambda*cos_2alphi_t \
+            +0.5*self.__sin_2gamma*self.__cos_2delta*self.__sin_2lambda*cos_alphi_t \
+            -0.5*self.__cos_2gamma*self.__sin_2delta*self.__sin_lambda*sin_2alphi_t \
+            -1.5*self.__sin_2gamma*self.__sin_delta*self.__cos_delta*self.__cos_lambda*self.__cos_lambda
+
+    @property
+    def Gcross_deriv_alpha(self):
+        return self.__Gcross_deriv_alpha
+    def Gcross_deriv_alpha_t(self, t_SI):
+        alphi_t = self.__alphi - self.__OmegaEarth * t_SI
+        cos_2alphi_t = np.cos(2.*alphi_t)
+        sin_2alphi_t = np.sin(2.*alphi_t)
+        cos_alphi_t = np.cos(alphi_t)
+        sin_alphi_t = np.sin(alphi_t)
+        return 0.5*self.__sin_2gamma*self.__sin_delta*self.__3MinusCos2Lambda*cos_2alphi_t \
+                    -2.*self.__cos_2gamma*self.__sin_delta*self.__sin_lambda*sin_2alphi_t \
+                    +0.5*self.__sin_2gamma*self.__cos_delta*self.__sin_2lambda*cos_alphi_t \
+                    -self.__cos_2gamma*self.__cos_delta*self.__cos_lambda*sin_alphi_t
+    
+    @property
+    def Gcross_deriv_delta(self):
+        return self.__Gcross_deriv_delta
+    def Gcross_deriv_delta_t(self, t_SI):
+        alphi_t = self.__alphi - self.__OmegaEarth * t_SI
+        cos_2alphi_t = np.cos(2.*alphi_t)
+        sin_2alphi_t = np.sin(2.*alphi_t)
+        cos_alphi_t = np.cos(alphi_t)
+        sin_alphi_t = np.sin(alphi_t)
+        return -0.5*self.__sin_2gamma*self.__sin_delta*self.__sin_2lambda*sin_alphi_t \
+            -self.__cos_2gamma*self.__sin_delta*self.__cos_lambda*cos_alphi_t \
+            +self.__cos_2gamma*self.__cos_delta*self.__sin_lambda*cos_2alphi_t \
+            +0.25*self.__sin_2gamma*self.__cos_delta*self.__3MinusCos2Lambda*sin_2alphi_t
+    
+    @property
+    def Fplus(self):
+        return self.__sin_zeta*self.Gplus
+    def Fplus_t(self, t_SI):
+        return self.__sin_zeta*self.Gplus_t(t_SI)
+    
+    @property
+    def Fcross(self):
+        return self.__sin_zeta*self.Gcross
+    def Fcross_t(self, t_SI):
+        return self.__sin_zeta*self.Gcross_t(t_SI)
+    
+    @property
+    def Fplus_deriv_alpha(self):
+        return self.__sin_zeta*self.Gplus_deriv_alpha
+    def Fplus_deriv_alpha_t(self, t_SI):
+        return self.__sin_zeta*self.Gplus_deriv_alpha_t(t_SI)
+
+    @property
+    def Fplus_deriv_delta(self):
+        return self.__sin_zeta*self.Gplus_deriv_delta
+    def Fplus_deriv_delta_t(self, t_SI):
+        return self.__sin_zeta*self.Gplus_deriv_delta_t(t_SI)
+    
+    @property
+    def Fcross_deriv_alpha(self):
+        return self.__sin_zeta*self.Gcross_deriv_alpha
+    def Fcross_deriv_alpha_t(self, t_SI):
+        return self.__sin_zeta*self.Gcross_deriv_alpha_t(t_SI)
+    
+    @property
+    def Fcross_deriv_delta(self):
+        return self.__sin_zeta*self.Gcross_deriv_delta
+    def Fcross_deriv_delta_t(self, t_SI):
+        return self.__sin_zeta*self.Gcross_deriv_delta_t(t_SI)
+    
+    @property
+    def barFplus(self):
+        return self.Fplus*self.__cos_2psi + self.Fcross*self.__sin_2psi
+    def barFplus_t(self, t_SI):
+        return self.Fplus_t(t_SI)*self.__cos_2psi + self.Fcross_t(t_SI)*self.__sin_2psi
+    
+    @property
+    def barFcross(self):
+        return self.Fcross*self.__cos_2psi - self.Fplus*self.__sin_2psi
+    def barFcross_t(self, t_SI):
+        return self.Fcross_t(t_SI)*self.__cos_2psi - self.Fplus_t(t_SI)*self.__sin_2psi
+    
+    @property
+    def barFplus_deriv_psi(self):
+        return -2.*(self.Fplus*self.__sin_2psi - self.Fcross*self.__cos_2psi)
+    def barFplus_deriv_psi_t(self, t_SI):
+        return -2.*(self.Fplus_t(t_SI)*self.__sin_2psi - self.Fcross_t(t_SI)*self.__cos_2psi)
+
+    @property
+    def barFplus_deriv_alpha(self):
+        return self.Fplus_deriv_alpha*self.__cos_2psi + self.Fcross_deriv_alpha*self.__sin_2psi
+    def barFplus_deriv_alpha_t(self, t_SI):
+        return self.Fplus_deriv_alpha_t(t_SI)*self.__cos_2psi + self.Fcross_deriv_alpha_t(t_SI)*self.__sin_2psi
+
+    @property
+    def barFplus_deriv_delta(self):
+        return self.Fplus_deriv_delta*self.__cos_2psi + self.Fcross_deriv_delta*self.__sin_2psi
+    def barFplus_deriv_delta_t(self, t_SI):
+        return self.Fplus_deriv_delta_t(t_SI)*self.__cos_2psi + self.Fcross_deriv_delta_t(t_SI)*self.__sin_2psi
+    
+    @property
+    def barFcross_deriv_psi(self):
+        return -2.*(self.Fplus*self.__cos_2psi + self.Fcross*self.__sin_2psi)
+    def barFcross_deriv_psi_t(self, t_SI):
+        return -2.*(self.Fplus_t(t_SI)*self.__cos_2psi + self.Fcross_t(t_SI)*self.__sin_2psi)
+
+    @property
+    def barFcross_deriv_alpha(self):
+        return self.Fcross_deriv_alpha*self.__cos_2psi - self.Fplus_deriv_alpha*self.__sin_2psi
+    def barFcross_deriv_alpha_t(self, t_SI):
+        return self.Fcross_deriv_alpha_t(t_SI)*self.__cos_2psi - self.Fplus_deriv_alpha_t(t_SI)*self.__sin_2psi
+
+    @property
+    def barFcross_deriv_delta(self):
+        return self.Fcross_deriv_delta*self.__cos_2psi - self.Fplus_deriv_delta*self.__sin_2psi
+    def barFcross_deriv_delta_t(self, t_SI):
+        return self.Fcross_deriv_delta_t(t_SI)*self.__cos_2psi - self.Fplus_deriv_delta_t(t_SI)*self.__sin_2psi
+
+    def __del__(self):
+        myLib.DestroyAntennaPatternF(self.__ccore)
+        myLibBasic.CheckMemoryLeaks()
+
 
 class pybbh(pypngwtd):
     def __init__(self, **kwargs):
@@ -111,6 +377,28 @@ class pybbh(pypngwtd):
         myLibBasic.DestroyREAL8Vector(etVec)
         myLibBasic.CheckMemoryLeaks()
         return t_PC, self.hPref * ret_Qplus, self.hPref * ret_Qcross
+
+    def get_td_waveform_strain_PC(self, vVec, apf:AntennaPatternF):
+        l_PC, t_PC = self.calc_ltPCByvomVec(vVec)
+        # l_PC = l_PC - l_PC[0]
+        # t_PC = t_PC - t_PC[0]
+        tSIVec = convert_ndarray_to_REAL8Vector(t_PC*self.MT)
+        lVec = convert_ndarray_to_REAL8Vector(l_PC)
+        vomVec = convert_ndarray_to_REAL8Vector(vVec)
+        QVec = ctypes.POINTER(pyREAL8Vector)()
+        etVec = convert_ndarray_to_REAL8Vector(self.etByvx(self.vxByvom(vVec)))
+        ret_cev = myLib.calculate_QWaveformVec(tSIVec, lVec, etVec, vomVec, 
+            self.__ccore, apf.ccore,
+            ctypes.byref(QVec))
+        ret_QVec = convert_REAL8Vector_to_numpy(QVec)
+        # myLibBasic.DestroyREAL8Vector(QplusVec)
+        # myLibBasic.DestroyREAL8Vector(QcrossVec)
+        myLibBasic.DestroyREAL8Vector(tSIVec)
+        myLibBasic.DestroyREAL8Vector(lVec)
+        myLibBasic.DestroyREAL8Vector(vomVec)
+        myLibBasic.DestroyREAL8Vector(etVec)
+        myLibBasic.CheckMemoryLeaks()
+        return t_PC, self.hPref * ret_QVec
 
     def get_td_waveform_emode_PC(self, n:int, m:int, vVec):
         l_PC, t_PC = self.calc_ltPCByvomVec(vVec)
@@ -356,5 +644,18 @@ class pybbh(pypngwtd):
         ht_p = self.MT*self.hPref*(ret_ReQp + 1.j*ret_ImQp)
         ht_c = self.MT*self.hPref*(ret_ReQc + 1.j*ret_ImQc)
         return ht_p, ht_c
+
+    def htilde_strain_SPA(self, freqs:np.ndarray, apf:AntennaPatternF):
+        freqsVec = convert_ndarray_to_REAL8Vector(freqs * self.MT)
+        ReQVec = ctypes.POINTER(pyREAL8Vector)()
+        ImQVec = ctypes.POINTER(pyREAL8Vector)()
+        ret_cev = myLib.calc_QstrainSPA_Allemode(ctypes.c_double(self.MT), 
+            freqsVec, self.__ccore, apf.ccore,
+            ctypes.byref(ReQVec), ctypes.byref(ImQVec))
+        ret_ReQ = convert_REAL8Vector_to_numpy(ReQVec)
+        ret_ImQ = convert_REAL8Vector_to_numpy(ImQVec)
+        myLibBasic.DestroyREAL8Vector(freqsVec)
+        myLibBasic.CheckMemoryLeaks()
+        return self.MT*self.hPref*(ret_ReQ + 1.j*ret_ImQ)
 
 

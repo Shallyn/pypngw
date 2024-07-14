@@ -12,6 +12,8 @@
 #define __INCLUDE_PNGW_DATATYPES__
 #include "../libbasic/basic.h"
 
+#define CST_OMEGA_EARTH 7.27220521664303990384871153536921963934529954e-5
+
 typedef struct {
     REAL8 e0;
     REAL8 e02;
@@ -102,5 +104,50 @@ typedef struct {
     BBHDynParams *pms;
     BBHDynVariables *var;
 }BBHCore;
+
+typedef struct {
+    REAL8 psi;
+    REAL8 alpha;
+    REAL8 delta;
+
+    REAL8 lbd;
+    REAL8 varphi;
+    REAL8 gamma;
+    REAL8 zeta;
+
+    REAL8 alphi;
+    REAL8 sin_zeta;
+    REAL8 sin_2psi;
+    REAL8 cos_2psi;
+    REAL8 sin_alphi;
+    REAL8 cos_alphi;
+    REAL8 sin_2alphi;
+    REAL8 cos_2alphi;
+    REAL8 sin_2gamma;
+    REAL8 cos_2gamma;
+    REAL8 sin_2delta;
+    REAL8 cos_2delta;
+    REAL8 sin_delta;
+    REAL8 cos_delta;
+    REAL8 sin_2lambda;
+    REAL8 cos_2lambda;
+    REAL8 sin_lambda;
+    REAL8 cos_lambda;
+    REAL8 MinusCos2LambdaPlus3;
+    REAL8 MinusCos2DeltaPlus3;
+
+    REAL8 Gplus;
+    REAL8 Gcross;
+    REAL8 Gplus_deriv_alpha;
+    REAL8 Gplus_deriv_delta;
+
+    REAL8 Gcross_deriv_alpha;
+    REAL8 Gcross_deriv_delta;
+
+    REAL8 Fplus;
+    REAL8 Fcross;
+    REAL8 barFplus;
+    REAL8 barFcross;
+}AntennaPatternF;
 
 #endif

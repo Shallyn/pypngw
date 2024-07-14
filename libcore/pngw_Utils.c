@@ -177,3 +177,231 @@ REAL8 calculate_k(BBHDynVariables *var, BBHDynParams *pms)
         6*pms->sx*((-pms->kappa1 + pms->kappa2 + pms->dm*(2 + pms->kappa1 + pms->kappa2))*pms->sigx + (2 + pms->kappa1 + pms->kappa2)*pms->sx)) / (4. * tmpe * tmpe);
     return PN2 + PN3 + PN4;
 }
+
+
+AntennaPatternF *CreateAntennaPatternF(REAL8 psi, REAL8 ra, REAL8 dec,
+    REAL8 lbd, REAL8 varphi, REAL8 gamma, REAL8 zeta)
+{
+    AntennaPatternF *ret = (AntennaPatternF *)MYMalloc(sizeof(AntennaPatternF));
+    ret->psi = psi;
+    ret->alpha = ra;
+    ret->delta = dec;
+
+    ret->lbd = lbd;
+    ret->varphi = varphi;
+    ret->gamma = gamma;
+    ret->zeta = zeta;
+
+    ret->alphi = ra - varphi;
+
+    ret->alphi = ret->alpha - ret->varphi;
+    ret->sin_zeta = sin(ret->zeta);
+    ret->sin_2psi = sin(2.*ret->psi);
+    ret->cos_2psi = cos(2.*ret->psi);
+    ret->sin_2alphi = sin(2.*ret->alphi);
+    ret->cos_2alphi = cos(2.*ret->alphi);
+    ret->sin_alphi = sin(ret->alphi);
+    ret->cos_alphi = cos(ret->alphi);
+    ret->sin_2gamma = sin(2.*ret->gamma);
+    ret->cos_2gamma = cos(2.*ret->gamma);
+    ret->sin_2delta = sin(2.*ret->delta);
+    ret->cos_2delta = cos(2.*ret->delta);
+    ret->sin_delta = sin(ret->delta);
+    ret->cos_delta = cos(ret->delta);
+    ret->sin_2lambda = sin(2.*ret->lbd);
+    ret->cos_2lambda = cos(2.*ret->lbd);
+    ret->sin_lambda = sin(ret->lbd);
+    ret->cos_lambda = cos(ret->lbd);
+    ret->MinusCos2LambdaPlus3 = 3.-ret->cos_2lambda;
+    ret->MinusCos2DeltaPlus3 = 3.-ret->cos_2delta;
+
+    ret->Gplus = (1./16.)*ret->sin_2gamma*ret->MinusCos2LambdaPlus3*ret->MinusCos2DeltaPlus3*ret->cos_2alphi 
+        -0.25*ret->cos_2gamma*ret->sin_lambda*ret->MinusCos2DeltaPlus3*ret->sin_2alphi 
+        +0.25*ret->sin_2gamma*ret->sin_2lambda*ret->sin_2delta*ret->cos_alphi 
+        -0.5*ret->cos_2gamma*ret->cos_lambda*ret->sin_2delta*ret->sin_alphi 
+        +0.75*ret->sin_2gamma*ret->cos_lambda*ret->cos_lambda*ret->cos_delta*ret->cos_delta;
+    ret->Gcross = ret->cos_2gamma*ret->sin_lambda*ret->sin_delta*ret->cos_2alphi 
+        +0.25*ret->sin_2gamma*ret->MinusCos2LambdaPlus3*ret->sin_delta*ret->sin_2alphi 
+        +ret->cos_2gamma*ret->cos_lambda*ret->cos_delta*ret->cos_alphi 
+        +0.5*ret->sin_2gamma*ret->sin_2lambda*ret->cos_delta*ret->sin_alphi;
+
+    ret->Gplus_deriv_alpha = -0.25*ret->sin_2gamma*ret->sin_2delta*ret->sin_2lambda*ret->sin_alphi 
+        -0.5*ret->cos_2gamma*ret->sin_2delta*ret->cos_lambda*ret->cos_alphi 
+        -0.5*ret->cos_2gamma*ret->MinusCos2DeltaPlus3*ret->sin_lambda*ret->cos_2alphi 
+        -0.125*ret->sin_2gamma*ret->MinusCos2DeltaPlus3*ret->MinusCos2LambdaPlus3*ret->sin_2alphi;
+    
+    ret->Gplus_deriv_delta = -ret->cos_2gamma*ret->cos_2delta*ret->cos_lambda*ret->sin_alphi 
+        +0.125*ret->sin_2gamma*ret->sin_2delta*ret->MinusCos2LambdaPlus3*ret->cos_2alphi 
+        +0.5*ret->sin_2gamma*ret->cos_2delta*ret->sin_2lambda*ret->cos_alphi 
+        -0.5*ret->cos_2gamma*ret->sin_2delta*ret->sin_lambda*ret->sin_2alphi 
+        -1.5*ret->sin_2gamma*ret->sin_delta*ret->cos_delta*ret->cos_lambda*ret->cos_lambda;
+    
+    ret->Gcross_deriv_alpha = 0.5*ret->sin_2gamma*ret->sin_delta*ret->MinusCos2LambdaPlus3*ret->cos_2alphi 
+        -2.*ret->cos_2gamma*ret->sin_delta*ret->sin_lambda*ret->sin_2alphi 
+        +0.5*ret->sin_2gamma*ret->cos_delta*ret->sin_2lambda*ret->cos_alphi 
+        -ret->cos_2gamma*ret->cos_delta*ret->cos_lambda*ret->sin_alphi;
+    
+    ret->Gcross_deriv_delta = -0.5*ret->sin_2gamma*ret->sin_delta*ret->sin_2lambda*ret->sin_alphi 
+        -ret->cos_2gamma*ret->sin_delta*ret->cos_lambda*ret->cos_alphi 
+        +ret->cos_2gamma*ret->cos_delta*ret->sin_lambda*ret->cos_2alphi 
+        +0.25*ret->sin_2gamma*ret->cos_delta*ret->MinusCos2LambdaPlus3*ret->sin_2alphi;
+
+    return ret;
+}
+
+void DestroyAntennaPatternF(AntennaPatternF *apf)
+{
+    if (apf)
+        MYFree(apf);
+    return;
+}
+
+REAL8 calculate_Gplus_t(REAL8 t_SI, AntennaPatternF *apf)
+{
+    REAL8 alphi_t = apf->alphi - CST_OMEGA_EARTH * t_SI;
+    REAL8 cos_2alphi_t = cos(2.*alphi_t);
+    REAL8 sin_2alphi_t = sin(2.*alphi_t);
+    REAL8 cos_alphi_t = cos(alphi_t);
+    REAL8 sin_alphi_t = sin(alphi_t);
+    return (1./16.)*apf->sin_2gamma*apf->MinusCos2LambdaPlus3*apf->MinusCos2DeltaPlus3*cos_2alphi_t
+        -0.25*apf->cos_2gamma*apf->sin_lambda*apf->MinusCos2DeltaPlus3*sin_2alphi_t
+        +0.25*apf->sin_2gamma*apf->sin_2lambda*apf->sin_2delta*cos_alphi_t
+        -0.5*apf->cos_2gamma*apf->cos_lambda*apf->sin_2delta*sin_alphi_t
+        +0.75*apf->sin_2gamma*apf->cos_lambda*apf->cos_lambda*apf->cos_delta*apf->cos_delta;
+}
+
+REAL8 calculate_Gcross_t(REAL8 t_SI, AntennaPatternF *apf)
+{
+    REAL8 alphi_t = apf->alphi - CST_OMEGA_EARTH * t_SI;
+    REAL8 cos_2alphi_t = cos(2.*alphi_t);
+    REAL8 sin_2alphi_t = sin(2.*alphi_t);
+    REAL8 cos_alphi_t = cos(alphi_t);
+    REAL8 sin_alphi_t = sin(alphi_t);
+    return apf->cos_2gamma*apf->sin_lambda*apf->sin_delta*cos_2alphi_t 
+                +0.25*apf->sin_2gamma*apf->MinusCos2LambdaPlus3*apf->sin_delta*sin_2alphi_t 
+                +apf->cos_2gamma*apf->cos_lambda*apf->cos_delta*cos_alphi_t 
+                +0.5*apf->sin_2gamma*apf->sin_2lambda*apf->cos_delta*sin_alphi_t;
+}
+
+REAL8 calculate_Gplus_deriv_alpha_t(REAL8 t_SI, AntennaPatternF *apf)
+{
+    REAL8 alphi_t = apf->alphi - CST_OMEGA_EARTH * t_SI;
+    REAL8 cos_2alphi_t = cos(2.*alphi_t);
+    REAL8 sin_2alphi_t = sin(2.*alphi_t);
+    REAL8 cos_alphi_t = cos(alphi_t);
+    REAL8 sin_alphi_t = sin(alphi_t);
+    return -0.25*apf->sin_2gamma*apf->sin_2delta*apf->sin_2lambda*sin_alphi_t 
+        -0.5*apf->cos_2gamma*apf->sin_2delta*apf->cos_lambda*cos_alphi_t 
+        -0.5*apf->cos_2gamma*apf->MinusCos2DeltaPlus3*apf->sin_lambda*cos_2alphi_t 
+        -0.125*apf->sin_2gamma*apf->MinusCos2DeltaPlus3*apf->MinusCos2LambdaPlus3*sin_2alphi_t;
+}
+
+REAL8 calculate_Gplus_deriv_delta_t(REAL8 t_SI, AntennaPatternF *apf)
+{
+    REAL8 alphi_t = apf->alphi - CST_OMEGA_EARTH * t_SI;
+    REAL8 cos_2alphi_t = cos(2.*alphi_t);
+    REAL8 sin_2alphi_t = sin(2.*alphi_t);
+    REAL8 cos_alphi_t = cos(alphi_t);
+    REAL8 sin_alphi_t = sin(alphi_t);
+    return -apf->cos_2gamma*apf->cos_2delta*apf->cos_lambda*sin_alphi_t 
+        +0.125*apf->sin_2gamma*apf->sin_2delta*apf->MinusCos2LambdaPlus3*cos_2alphi_t 
+        +0.5*apf->sin_2gamma*apf->cos_2delta*apf->sin_2lambda*cos_alphi_t 
+        -0.5*apf->cos_2gamma*apf->sin_2delta*apf->sin_lambda*sin_2alphi_t 
+        -1.5*apf->sin_2gamma*apf->sin_delta*apf->cos_delta*apf->cos_lambda*apf->cos_lambda;
+}
+
+REAL8 calculate_Gcross_deriv_alpha_t(REAL8 t_SI, AntennaPatternF *apf)
+{
+    REAL8 alphi_t = apf->alphi - CST_OMEGA_EARTH * t_SI;
+    REAL8 cos_2alphi_t = cos(2.*alphi_t);
+    REAL8 sin_2alphi_t = sin(2.*alphi_t);
+    REAL8 cos_alphi_t = cos(alphi_t);
+    REAL8 sin_alphi_t = sin(alphi_t);
+    return 0.5*apf->sin_2gamma*apf->sin_delta*apf->MinusCos2LambdaPlus3*cos_2alphi_t 
+                -2.*apf->cos_2gamma*apf->sin_delta*apf->sin_lambda*sin_2alphi_t 
+                +0.5*apf->sin_2gamma*apf->cos_delta*apf->sin_2lambda*cos_alphi_t 
+                -apf->cos_2gamma*apf->cos_delta*apf->cos_lambda*sin_alphi_t;
+}
+
+REAL8 calculate_Gcross_deriv_delta_t(REAL8 t_SI, AntennaPatternF *apf)
+{
+    REAL8 alphi_t = apf->alphi - CST_OMEGA_EARTH * t_SI;
+    REAL8 cos_2alphi_t = cos(2.*alphi_t);
+    REAL8 sin_2alphi_t = sin(2.*alphi_t);
+    REAL8 cos_alphi_t = cos(alphi_t);
+    REAL8 sin_alphi_t = sin(alphi_t);
+    return -0.5*apf->sin_2gamma*apf->sin_delta*apf->sin_2lambda*sin_alphi_t 
+        -apf->cos_2gamma*apf->sin_delta*apf->cos_lambda*cos_alphi_t 
+        +apf->cos_2gamma*apf->cos_delta*apf->sin_lambda*cos_2alphi_t 
+        +0.25*apf->sin_2gamma*apf->cos_delta*apf->MinusCos2LambdaPlus3*sin_2alphi_t;
+}
+
+REAL8 calculate_Fplus_t(REAL8 t_SI, AntennaPatternF *apf)
+{
+    return apf->sin_zeta*calculate_Gplus_t(t_SI, apf);
+}
+
+REAL8 calculate_Fcross_t(REAL8 t_SI, AntennaPatternF *apf)
+{
+    return apf->sin_zeta*calculate_Gcross_t(t_SI, apf);
+}
+
+REAL8 calculate_Fplus_deriv_alpha_t(REAL8 t_SI, AntennaPatternF *apf)
+{
+    return apf->sin_zeta*calculate_Gplus_deriv_alpha_t(t_SI, apf);
+}
+
+REAL8 calculate_Fplus_deriv_delta_t(REAL8 t_SI, AntennaPatternF *apf)
+{
+    return apf->sin_zeta*calculate_Gplus_deriv_delta_t(t_SI, apf);
+}
+
+REAL8 calculate_Fcross_deriv_alpha_t(REAL8 t_SI, AntennaPatternF *apf)
+{
+    return apf->sin_zeta*calculate_Gcross_deriv_alpha_t(t_SI, apf);
+}
+
+REAL8 calculate_Fcross_deriv_delta_t(REAL8 t_SI, AntennaPatternF *apf)
+{
+    return apf->sin_zeta*calculate_Gcross_deriv_delta_t(t_SI, apf);
+}
+
+REAL8 calculate_barFplus_t(REAL8 t_SI, AntennaPatternF *apf)
+{
+    return calculate_Fplus_t(t_SI, apf)*apf->cos_2psi + calculate_Fcross_t(t_SI, apf)*apf->sin_2psi;
+}
+
+REAL8 calculate_barFcross_t(REAL8 t_SI, AntennaPatternF *apf)
+{
+    return calculate_Fcross_t(t_SI, apf)*apf->cos_2psi - calculate_Fplus_t(t_SI, apf)*apf->sin_2psi;
+}
+
+REAL8 calculate_barFplus_deriv_psi_t(REAL8 t_SI, AntennaPatternF *apf)
+{
+    return -2.*(calculate_Fplus_t(t_SI, apf)*apf->sin_2psi - calculate_Fcross_t(t_SI, apf)*apf->cos_2psi);
+}
+
+REAL8 calculate_barFplus_deriv_alpha_t(REAL8 t_SI, AntennaPatternF *apf)
+{
+    return calculate_Fplus_deriv_alpha_t(t_SI, apf)*apf->cos_2psi + calculate_Fcross_deriv_alpha_t(t_SI, apf)*apf->sin_2psi;
+}
+
+REAL8 calculate_barFplus_deriv_delta_t(REAL8 t_SI, AntennaPatternF *apf)
+{
+    return calculate_Fplus_deriv_delta_t(t_SI, apf)*apf->cos_2psi + calculate_Fcross_deriv_delta_t(t_SI, apf)*apf->sin_2psi;
+}
+
+REAL8 calculate_barFcross_deriv_psi_t(REAL8 t_SI, AntennaPatternF *apf)
+{
+    return -2.*(calculate_Fplus_t(t_SI, apf)*apf->cos_2psi + calculate_Fcross_t(t_SI, apf)*apf->sin_2psi);
+}
+
+REAL8 calculate_barFcross_deriv_alpha_t(REAL8 t_SI, AntennaPatternF *apf)
+{
+    return calculate_Fcross_deriv_alpha_t(t_SI, apf)*apf->cos_2psi - calculate_Fplus_deriv_alpha_t(t_SI, apf)*apf->sin_2psi;
+}
+
+REAL8 calculate_barFcross_deriv_delta_t(REAL8 t_SI, AntennaPatternF *apf)
+{
+    return calculate_Fcross_deriv_delta_t(t_SI, apf)*apf->cos_2psi - calculate_Fplus_deriv_delta_t(t_SI, apf)*apf->sin_2psi;
+}

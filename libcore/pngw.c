@@ -38,6 +38,32 @@ COMPLEX16 calculate_QpcWaveform(REAL8 lval, BBHCore *core)
     // return Q_L;
 }
 
+REAL8 calculate_QWaveform(REAL8 tSIval, REAL8 lval, BBHCore *core, AntennaPatternF *apf)
+{
+    //SetBBHCoreDynVariables(eVal, vomVal, core);
+    REAL8 Q_U, Q_E;
+    COMPLEX16 Q_L, Q_LE;
+    COMPLEX16 QPlusL, QPlusLE, QCrossL, QCrossLE;
+    Q_U = calculate_QUPart_waveform(lval, core->var, core->pms);
+    Q_E = calculate_QEPart_waveform(lval, core->var, core->pms);
+    Q_L = calculate_QLPart_waveform(lval, core->var, core->pms);
+    Q_LE = calculate_QLEPart_waveform(lval, core->var, core->pms);
+    QPlusL = Q_L * core->pms->hPlusL;
+    QPlusLE = Q_LE * core->pms->hPlusLE;
+    QCrossL = Q_L * core->pms->hCrossL;
+    QCrossLE = Q_LE * core->pms->hCrossLE;
+    COMPLEX16 Qplus, Qcross;
+    REAL8 Fp, Fc;
+    Fp = calculate_barFplus_t(tSIval, apf);
+    Fc = calculate_barFcross_t(tSIval, apf);
+    // return Q_U*core->pms->hPlusU + Q_E*core->pms->hPlusE + QPlusL + conj(QPlusL) + QPlusLE + conj(QPlusLE) -
+    //     I*(QCrossL + conj(QCrossL) + QCrossLE + conj(QCrossLE));
+    // return QPlusL + conj(QPlusL) + I*(QCrossL + conj(QCrossL));
+    Qplus = Q_U*core->pms->hPlusU + Q_E*core->pms->hPlusE + QPlusL + conj(QPlusL) + QPlusLE + conj(QPlusLE);
+    Qcross = QCrossL + conj(QCrossL) + QCrossLE + conj(QCrossLE);
+    return creal(Qplus*Fp + Qcross*Fc);
+}
+
 INT calculate_QpcWaveform_emode(INT n, INT m, REAL8 lval, BBHCore *core,
     COMPLEX16 *ret_QPlus, COMPLEX16 *ret_QCross)
 {
@@ -553,9 +579,25 @@ INT calc_QSPA_emode(INT n, INT m, REAL8Vector *freqsVec, BBHCore *core,
     return X_SUCCESS;
 }
 
+INT calculate_QWaveformVec(REAL8Vector *tSIVec, REAL8Vector *lVec, 
+    REAL8Vector *etVec, REAL8Vector *vomVec, 
+    BBHCore *core, AntennaPatternF *apf,
+    REAL8Vector **QVec)
+{
+    REAL8Vector *ret_QVec = CreateREAL8Vector(lVec->length);
+    REAL8 QQ;
+    for (INT i = 0; i < lVec->length; i++) {
+        SetBBHCoreDynVariables(etVec->data[i], vomVec->data[i], core);
+        QQ = calculate_QWaveform(tSIVec->data[i], lVec->data[i], core, apf);
+        ret_QVec->data[i] = QQ;
+    }
+    *QVec = ret_QVec;
+    return X_SUCCESS;
+}
+
 
 INT calc_QSPA_Allemode(REAL8Vector *freqsVec, BBHCore *core,
-    REAL8Vector **ret_ReQpVec, REAL8Vector **ret_ImQpVec,
+    REAL8Vector **ret_ReQpVec, REAL8Vector **ret_ImQpVec, 
     REAL8Vector **ret_ReQcVec, REAL8Vector **ret_ImQcVec)
 {
     INT status;
@@ -569,14 +611,14 @@ INT calc_QSPA_Allemode(REAL8Vector *freqsVec, BBHCore *core,
 
     for (INT i=0; i < freqsVec->length; i++) {
         ReQpVec->data[i] = 0;
-        ReQcVec->data[i] = 0;
         ImQpVec->data[i] = 0;
+        ReQcVec->data[i] = 0;
         ImQcVec->data[i] = 0;
     }
 
     INT n, m;
-    COMPLEX16 Qp, Qc, AmpQp, AmpQc, phase;
-    REAL8 invsqpsiddot;
+    COMPLEX16 Qp, Qc, QQ, AmpQp, AmpQc;
+    REAL8 invsqpsiddot, phase;
     for (INT ikl = 0; ikl < n_scpart_Func; ikl++) {
         m = scpart_Func_lkList[ikl][0];
         n = scpart_Func_lkList[ikl][1];
@@ -607,5 +649,62 @@ INT calc_QSPA_Allemode(REAL8Vector *freqsVec, BBHCore *core,
     *ret_ImQpVec = ImQpVec;
     *ret_ReQcVec = ReQcVec;
     *ret_ImQcVec = ImQcVec;
+    return X_SUCCESS;
+}
+
+INT calc_QstrainSPA_Allemode(REAL8 MT, REAL8Vector *freqsVec, BBHCore *core, AntennaPatternF *apf,
+    REAL8Vector **ret_ReQVec, REAL8Vector **ret_ImQVec)
+{
+    INT status;
+    REAL8 vom;
+    REAL8 et;
+    REAL8 k, lval, tval;
+    REAL8Vector *ReQVec = CreateREAL8Vector(freqsVec->length);
+    REAL8Vector *ImQVec = CreateREAL8Vector(freqsVec->length);
+
+    for (INT i=0; i < freqsVec->length; i++) {
+        ReQVec->data[i] = 0;
+        ImQVec->data[i] = 0;
+    }
+
+    INT n, m;
+    COMPLEX16 Qp, Qc, QQ, AmpQp, AmpQc;
+    REAL8 Fp, Fc, phase;
+    REAL8 invsqpsiddot;
+    for (INT ikl = 0; ikl < n_scpart_Func; ikl++) {
+        m = scpart_Func_lkList[ikl][0];
+        n = scpart_Func_lkList[ikl][1];
+        for (INT i = 0; i < freqsVec->length; i++) {
+            vom = Calculate_vom(n, m, freqsVec->data[i], core);
+            et = calc_et_by_vom(vom, core->pms);
+            SetBBHCoreDynVariables(et, vom, core);
+            lval = Calculate_l(core);
+            tval = Calculate_t(core);
+            Fp = calculate_barFplus_t(MT*tval, apf);
+            Fc = calculate_barFcross_t(MT*tval, apf);
+            phase = (m + n*k)*lval - CST_2PI*tval*freqsVec->data[i] + CST_PI_4;
+            k = calculate_k(core->var, core->pms);
+            invsqpsiddot = calculate_invsqpsiddot(n, m, lval, core);
+            // Qpc = calculate_QpcWaveform_emode(n, m, lval, core);
+            status = calculate_QpcWaveform_eexp_emode(n, m, lval, core, &Qp, &Qc);
+            AmpQp = CST_SQRT2PI * invsqpsiddot * Qp;
+            AmpQc = CST_SQRT2PI * invsqpsiddot * Qc;
+            // print_debug("vom = %.5e, et = %.5e, l = %.5e, t = %.5e, invsqpsiddot = %.5e, Qpc = %.5e + I %.5e\n",
+            //     vom, et, invsqpsiddot, creal(Qpc), cimag(Qpc));
+            QQ = AmpQp * cexp(I*phase) * Fp + AmpQc * cexp(I*phase) * Fc;
+            // if (isnan(creal(QQ)) || isnan(cimag(QQ)))
+            // print_debug("\n\tAmpQp = %.5e + I%.5e, phase = %.5e, Fp = %.5e\n\tAmpQc = %.5e + I%.5e, phase = %.5e, Fc = %.5e\n", 
+            //     creal(AmpQp), cimag(AmpQp), phase, Fp,
+            //     creal(AmpQc), cimag(AmpQc), phase, Fc);
+                // print_debug("Q(%d,%d) = (%.5e + I %.5e)\n\tQp = (%.5e + I %.5e), Qc = (%.5e + I %.5e)\n",
+                //         m, n, creal(QQ), cimag(QQ),
+                //         creal(Qp), cimag(Qp),
+                //         creal(Qc), cimag(Qc));
+            ReQVec->data[i] += creal(QQ);
+            ImQVec->data[i] += cimag(QQ);
+        }
+    }
+    *ret_ReQVec = ReQVec;
+    *ret_ImQVec = ImQVec;
     return X_SUCCESS;
 }
