@@ -659,3 +659,32 @@ class pybbh(pypngwtd):
         return self.MT*self.hPref*(ret_ReQ + 1.j*ret_ImQ)
 
 
+
+def calculate_strain_SPA(m1:float, m2:float, 
+                         chi1:float, chi2:float, 
+                         iota:float, phic:float, e0:float, distance:float,
+                         fmin:float, deltaF:float, 
+                         detname:str, psi:float, ra:float, dec:float,
+                         **kwargs):
+    '''
+        NOTE:
+            m1, m2     :    component masses of the BHs [M_solar]
+            chi1, chi2 :    component dimensionless spin of the BHs
+            iota, phic :    inclination angle and merger phase
+            fmin, e0   :    initial frequency and the corresponding initial eccentricity
+            distance   :    luminosity distance [Mpc]
+            detname    :    name of the detector
+                                only CE1, CE2, ET1, ET2, ET3, H1, L1, Virgo, KAGRA are available
+            psi        :    polarization angle
+            ra, dec    :    right ascension and declination
+            kwargs     :    other parameters are kappa1 and kappa2.
+    '''
+    # fstartTD, deltaF, tshift, freqWind = calculate_fStart(fmin, m1, m2, chi1, chi2, deltaT)
+    apf = AntennaPatternF(detname, psi=psi, ra=ra, dec=dec)
+    bbh = pybbh(m1=m1, m2=m2, chi1=chi1, chi2=chi2, e0=e0, distance=distance,
+                iota=iota, phic = phic, fmin = fmin, vommax = 0.277, **kwargs)
+    fmax = bbh.vommax**3 / (np.pi * bbh.MT)
+    freqs = np.arange(fmin, fmax, deltaF)
+    htildeSPA = bbh.htilde_strain_SPA(freqs, apf)
+    return freqs, htildeSPA
+
